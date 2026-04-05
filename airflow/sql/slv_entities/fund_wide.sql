@@ -1,0 +1,27 @@
+-- Silver（ワイド）テーブル DDL
+-- 1 レコード = 〈ファンドID × 基準日〉 の最小粒度
+-- Iceberg 1.9 / Spark 3.5.5 前提
+
+-- CREATE TABLE IF NOT EXISTS local_data_platform.slv_analytics.fund_daily_wide (
+--   `ファンドID`        STRING,
+--   `基準日`            DATE,
+--   `基準価額_円`       DECIMAL(18,4),
+--   `投資信託_分類`     STRING,
+--   `信託報酬_率`      DECIMAL(5,2),
+--   `有効フラグ`        BOOLEAN,
+--   `取込日`            DATE
+-- )
+-- USING ICEBERG
+-- TBLPROPERTIES (
+--     'openlineage.dataset.namespace' = 'local_data_platform.slv_analytics',
+--     'openlineage.dataset.name' = 'fund_daily_wide',
+--     'write.format.default' = 'parquet',
+--     'format-version'       = '2',
+--     'write.distribution-mode' = 'hash',      -- 小ファイル抑制
+--     'write.target-file-size-bytes' = '134217728'  -- 128 MB 目安
+-- )
+-- PARTITIONED BY (
+--   `取込日`,                  -- 冪等リトライ目的
+--   months(`基準日`),
+--   bucket(8, `ファンドID`)
+-- );

@@ -1,0 +1,35 @@
+
+services:
+  cubejs:
+    image: cubejs/cube:v1.3.5
+    container_name: cubejs.local.data.platform
+    ports:
+      - "4000:4000"
+    environment:
+      # ----- Trino 接続 -----
+      CUBEJS_DB_TYPE: trino
+      CUBEJS_DB_SSL: "true"
+      CUBEJS_DB_HOST: reverse-proxy.local.data.platform
+      CUBEJS_DB_PORT: "443"
+      CUBEJS_DB_USER: pyspark@local.data.platform
+      CUBEJS_DB_PASS: pyspark
+      CUBEJS_DB_PRESTO_CATALOG: iceberg_prod
+      CUBEJS_DB_NAME: gld_fund
+      # ----- キャッシュ／キュー -----
+      # memory ドライバを明示
+      CUBEJS_CACHE_AND_QUEUE_DRIVER: memory
+      # ----- リフレッシュ設定 -----
+      CUBEJS_REFRESH_WORKER: "true"
+      CUBEJS_SCHEDULED_REFRESH_TIMER: "true"
+      # ----- 開発モード -----
+      CUBEJS_DEV_MODE: "true"
+      CUBEJS_LOG_LEVEL: "trace"
+    volumes:
+      - ./cube/conf:/cube/conf
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: backend
+    external: true

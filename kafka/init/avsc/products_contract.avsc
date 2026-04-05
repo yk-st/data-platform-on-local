@@ -1,0 +1,126 @@
+{
+  "type": "record",
+  "name": "ProductsV1",
+  "namespace": "com.example.contracts.commerce",
+  "doc": "Products master; canonical schema and constraints encoded in Avro custom props.",
+  "x_compatibility": "BACKWARD",
+  
+  "x-slo": {
+    "latency_sec": 600,          // 10 min 以内に到着
+    "completeness_pct": 99.0,    // 1 hウィンドウ欠損 ≤1 %
+    "error_budget_hours": 4      // 月間許容 4 h
+  },
+
+  // データスキーマ変更ポリシー
+  "x-change_policy": {
+    "notice_days": 30,           // 30 日前までに告知
+    "dual_publish_days": 60     // v1 と併走 60 日
+  },
+
+  // 問い合わせ先などを記載
+  "x-remediation": {
+    "owner": "products-app-team",
+    "fix_within_hours": 24,
+    "notify_slack": "#products-data-notify"
+  },
+
+  "x_sql": {
+    "table": "products",
+    "primary_key": ["id"],
+    "indexes": [
+      {"name": "idx_products_vendor", "columns": ["vendor_name"]},
+      {"name": "idx_products_category", "columns": ["category"]},
+      {"name": "idx_products_ean", "columns": ["ean_code"]},
+      {"name": "idx_products_not_deleted", "expression": "(NOT is_deleted)"}
+    ]
+  },
+  "x_rules": [
+    {
+      "name": "soft_delete_consistency",
+      "level": "error",
+      // OKなルールを記載
+      "sql": "(is_deleted AND deleted_at IS NOT NULL) OR (NOT is_deleted AND deleted_at IS NULL) OR (is_deleted IS NULL AND deleted_at IS NULL)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "id",
+      "type": "string",
+      "doc": "Primary key",
+      "x_sql_type": "varchar(255)",
+      "x_constraints": { "min_length": 1 }
+    },
+    {
+      "name": "ean_code",
+      "type": ["null","string"],
+      "default": null,
+      "doc": "13-digit EAN; null if absent",
+      "x_sql_type": "char(13)",
+      "x_constraints": { "pattern": "^[0-9]{13}$" }
+    },
+    {
+      "name": "product_title",
+      "type": ["null","string"],
+      "default": null,
+      "x_sql_type": "varchar(255)"
+    },
+    {
+      "name": "category",
+      "type": ["null","string"],
+      "default": null,
+      "x_sql_type": "varchar(255)"
+    },
+    {
+      "name": "vendor_name",
+      "type": ["null","string"],
+      "default": null,
+      "x_sql_type": "varchar(255)"
+    },
+    {
+      "name": "price_usd",
+      "type": ["null", { "type": "bytes", "logicalType": "decimal", "precision": 12, "scale": 2 }],
+      "default": null,
+      "doc": "Non-negative",
+      "x_sql_type": "numeric(12,2)",
+      "x_constraints": { "min": 0.00 }
+    },
+    {
+      "name": "rating",
+      "type": ["null", { "type": "bytes", "logicalType": "decimal", "precision": 3, "scale": 2 }],
+      "default": null,
+      "doc": "0.00..5.00",
+      "x_sql_type": "numeric(3,2)",
+      "x_constraints": { "min": 0.00, "max": 5.00 }
+    },
+    {
+      "name": "created_at",
+      "type": ["null", { "type": "long", "logicalType": "timestamp-millis" }],
+      "default": null,
+      "x_sql_type": "timestamptz",
+      "x_default": "now()",
+      "doc": "creation timestamp"
+    },
+    {
+      "name": "updated_at",
+      "type": ["null", { "type": "long", "logicalType": "timestamp-millis" }],
+      "default": null,
+      "x_sql_type": "timestamptz",
+      "x_default": "now()",
+      "doc": "update timestamp"
+    },
+    {
+      "name": "is_deleted",
+      "type": ["boolean","null"],
+      "default": false,
+      "x_sql_type": "boolean",
+      "doc": "soft delete flag"
+    },
+    {
+      "name": "deleted_at",
+      "type": ["null", { "type": "long", "logicalType": "timestamp-millis" }],
+      "default": null,
+      "x_sql_type": "timestamptz",
+      "doc": "soft delete timestamp"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "tables": [
+    { "group": "admin", "privileges": ["SELECT","INSERT","DELETE","UPDATE","OWNERSHIP"] },
+    {
+      "group": "analyst",
+      "schema": "slv_entities",
+      "table": "user_orders_wide",
+      "privileges": ["SELECT"],
+      "filter": "\"user_id\" < 10 OR \"user_id\" > 100",
+      "columns": [
+        { "name": "password",
+          "mask": "rpad('', length(\"password\"), '*')" }
+      ]
+    },
+    {
+      "group": "analyst",
+      "schema": "slv_entities",
+      "table": ".*",
+      "privileges": []
+    },
+    {
+      "group": "analyst",
+      "schema": "brz_ingestion",
+      "table": ".*",
+      "privileges": []
+    },
+    { "group": "analyst", "privileges": ["SELECT"] }
+  ]
+}

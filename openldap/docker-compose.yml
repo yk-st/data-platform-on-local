@@ -1,0 +1,50 @@
+services:
+  openldap:
+    container_name: ldap.local.data.platform
+    image: osixia/openldap:latest
+    ports:
+      - "389:389"
+      - "636:636"
+    environment:
+      TZ: Asia/Tokyo
+      LDAP_ORGANISATION: YUKI
+      LDAP_DOMAIN: local.data.platform
+      LDAP_BASE_DN: dc=local,dc=data,dc=platform
+      LDAP_ADMIN_PASSWORD: admin
+      LDAP_CONFIG_PASSWORD: config
+      LDAP_TLS_VERIFY_CLIENT: never
+    restart: always
+    volumes:
+      - ./ldif/ldapadd.ldif:/container/service/slapd/assets/config/bootstrap/ldif/50-bootstrap.ldif
+    command: --copy-service
+    networks:
+      - backend
+  lam:
+    image: ghcr.io/ldapaccountmanager/lam:8.9
+    container_name: lam.local.data.platform
+    restart: on-failure:3
+    environment:
+      LDAP_DOMAIN: local.data.platform
+      LDAP_BASE_DN: dc=local,dc=data,dc=platform
+      LDAP_USERS_DN: ou=people,dc=local,dc=data,dc=platform
+      LDAP_GROUPS_DN: ou=groups,dc=local,dc=data,dc=platform
+      LDAP_SERVER: "ldap://ldap.local.data.platform:389"
+      LAM_LANG: "ja_JP"
+      LAM_PASSWORD: "lam_password"
+      VIRTUAL_HOST: "lam"
+      CERT_NAME: "ldap"
+    ports:
+      - "80:80"
+    depends_on:
+      - openldap
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true

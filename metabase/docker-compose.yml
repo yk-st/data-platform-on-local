@@ -1,0 +1,24 @@
+services:
+  local-metabase:
+    container_name: local-metabase
+    build: .
+    env_file: ./conf/env
+    ports:
+      - "13000:13000"
+    volumes:
+      - ../ca_certs/server_certs/server.crt:/root/server.crt
+    networks:
+      - backend
+
+  # Metabase backing db
+  local-postgres-mb:
+    image: postgres:14.13
+    container_name: local-metabase-db
+    env_file: ./conf/env
+    command: -p 13001
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true

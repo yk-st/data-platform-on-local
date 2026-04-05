@@ -1,0 +1,39 @@
+# docker exec -it spark-worker-1 /bin/bash
+services:
+  metastore-db:
+    image: postgres:14.13
+    container_name: metastore-db
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+    command: -p 9001
+    networks:
+      - backend
+
+  metastore-thrift:
+    build: .
+    container_name: metastore-thrift.local.data.platform
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      # metastoreへの接続を行う
+      SERVICE_OPTS: >
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://metastore-db:9001/metastore
+        -Djavax.jdo.option.ConnectionUserName=hive
+        -Djavax.jdo.option.ConnectionPassword=hive
+      # thriftはテーブルの作成時などにS3にLocationのチェックをするのでアクセスの設定を行う
+      AWS_ACCESS_KEY_ID: 5nCJP6jHFJd7PDsLlT3a
+      AWS_SECRET_ACCESS_KEY: FXn6MFKDbNamyMzxiMBGIpgTDFu2r1IfymESfRJd
+    ports:
+      - "9083:9083"  # Metastore Thrift Port
+    volumes:
+    # - ./conf/postgresql-42.2.5.jar:/opt/hive/lib/postgresql-42.2.5.jar
+    - ./conf/hive-site.xml:/opt/hive/conf/hive-site.xml
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true

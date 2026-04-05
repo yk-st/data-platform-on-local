@@ -1,0 +1,55 @@
+x-environment: &environment
+  MINIO_ROOT_USER: admin
+  # 本来はシークレットとして扱うべき
+  MINIO_ROOT_PASSWORD: admin123
+  # audit logs
+  MINIO_AUDIT_LOGGER_WEBHOOK_ENABLE: "on"
+  MINIO_AUDIT_LOGGER_WEBHOOK_ENDPOINT: "http://minio.local.data.platform:9000/audit-logs"
+  MINIO_AUDIT_LOGGER_WEBHOOK_AUTH_TOKEN: "himitu"
+
+services:
+
+  # Mnioのコンテナ
+  minio:
+    image: minio/minio:RELEASE.2025-07-18T21-56-31Z
+    container_name: minio.local.data.platform
+    hostname: minio.local.data.platform
+    ports:
+      - "9001:9001"
+    environment: *environment
+    entrypoint: sh
+    # コンソールは9001で、9000は内部のシステム利用として起動する
+    command: -c "/usr/bin/minio server /export --address :9000 --console-address :9001"
+    restart: always
+    # データの永続化設定
+    volumes:
+      - ./docker/minio/data:/export
+    # ヘルスチェックサービス（init_minioはreadyになったら動く）
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # バケットを作成したり、ファイルを配置する初期化コンテナ。作業が完了後停止する
+  init_minio:
+    build: .
+    container_name: initminio.local.data.platform
+    hostname: initminio.local.data.platform
+    # 2025の07リリースからGUIから一部の機能が廃止されたので、CLIを使って操作したい場合は本コンテナを起動状態にして利用する
+    #tty: true
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment: *environment
+    volumes:
+      - ./fixed_dataset:/root/fixed_dataset:ro
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    external: true

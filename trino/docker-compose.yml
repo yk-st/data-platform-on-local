@@ -1,0 +1,15 @@
+services:
+  trino:
+    build: .
+    container_name: trino.local.data.platform
+    hostname: trino.local.data.platform
+    # ports:
+    #   - "8086:8086"
+    volumes:
+      - ./etc:/etc/trino
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true

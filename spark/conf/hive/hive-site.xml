@@ -1,0 +1,50 @@
+<configuration>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://metastore-db:9001/metastore</value>
+    <description>JDBC connect string for a JDBC metastore</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+    <description>Driver class name for a JDBC metastore</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>hive</value>
+    <description>username to use against metastore database</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>hive</value>
+    <description>password to use against metastore database</description>
+  </property>
+
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://metastore-thrift.local.data.platform:9083</value>
+    <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+  </property>
+
+  <property>
+    <name>datanucleus.autoCreateSchema</name>
+    <value>true</value>
+    <description>Auto create JDO schema</description>
+  </property>
+
+  <property>
+    <name>hive.stats.jdbc.timeout</name>
+    <value>30</value>
+    <description>Timeout for JDBC calls for statistics (in seconds).</description>
+  </property>
+
+  <property>
+    <name>hive.stats.retries.wait</name>
+    <value>3000</value>
+    <description>Wait time between retries for statistics collection (in milliseconds).</description>
+  </property>
+
+</configuration>

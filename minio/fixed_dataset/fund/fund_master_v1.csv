@@ -1,0 +1,3 @@
+fund_id,fund_category,trust_fee_rate,is_active,fund_name,nickname,management_company,manager_name,manager_email
+FND001,ACTIVE,1.2,True,グローバルファンドA,成長最強ファンド,ファンド運用会社A,田中太郎,tanaka@example.com
+FND002,INDEX,0.25,True,債券ファンドB,夜も快眠ファンド,ファンド運用会社B,鈴木一郎,suzuki@example.com

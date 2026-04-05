@@ -1,0 +1,85 @@
+# docker exec -it spark-worker-1 /bin/bash
+services:
+  spark-master:
+    build: .
+    container_name: spark-master1.local.data.platform
+    hostname: spark-master1.local.data.platform
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master1.local.data.platform
+      - SPARK_MASTER_PORT=7077
+    # volumes:
+    #   - ./tmp/spark-events:/tmp/spark-events
+      #- ../resource_manager/conf/yarn-site.xml:/home/pyspark/spark/conf/yarn-site.xml
+    ports:
+      - "18082:8080"  # Spark Master UI
+      - "18077:7077"  # Spark Master Port
+    networks:
+      - backend
+
+  spark-worker:
+    build: .
+    # workerはホスト名を指定しない。スケールが楽になるので
+    # container_name: spark-worker.local.data.platform
+    # hostname: spark-worker.local.data.platform
+    env_file:
+      - ./conf/spark/worker.env
+    volumes:
+      - ./conf/spark:/etc/spark/conf
+      - ./conf/hive:/etc/hadoop/conf
+      #- ../resource_manager/conf/yarn-site.xml:/home/pyspark/spark/conf/yarn-site.xml
+    networks:
+      - backend
+    depends_on:
+      - spark-master
+
+  spark-history-server:
+    build: .
+    container_name: spark-history-server
+    hostname: spark-history-server
+    environment:
+      SPARK_MODE: history
+      # -Dspark.ui.reverseProxy=true
+      # -Dspark.ui.proxyBase=/spark-history
+      # -Dspark.ui.reverseProxyUrl=https://localhost/
+      SPARK_HISTORY_OPTS: >
+        -Dspark.history.fs.logDirectory=s3a://process-bucket/spark-history/
+        -Dspark.history.ui.port=18080
+        -Dspark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
+        -Dspark.hadoop.fs.s3a.endpoint=http://minio.local.data.platform:9000
+        -Dspark.hadoop.fs.s3a.access.key=5nCJP6jHFJd7PDsLlT3a
+        -Dspark.hadoop.fs.s3a.secret.key=FXn6MFKDbNamyMzxiMBGIpgTDFu2r1IfymESfRJd
+        -Dspark.hadoop.fs.s3a.path.style.access=true
+        -Dspark.eventLog.dir=s3a://process-bucket/spark-history/
+    ports:
+      - "18081:18080"  # Spark History Server UI
+    volumes:
+      - ./conf/spark:/etc/spark/conf
+      - ./conf/hive:/etc/hadoop/conf
+      #- ../resource_manager/conf/yarn-site.xml:/home/pyspark/spark/conf/yarn-site.xml
+    networks:
+      - backend
+
+  spark-thrift-server:
+    build: .
+    container_name: spark-thrift-server.local.data.platform
+    hostname: spark-thrift-server.local.data.platform
+    tty: true
+    environment:
+      - SPARK_MODE=thrift
+      - SPARK_MASTER_URL=spark://spark-master1.local.data.platform:7077
+    ports:
+      - "10000:10000"
+      - "4040:4040"
+    volumes:
+      # - ./tmp/spark-events:/tmp/spark-events
+      - ./conf/spark:/etc/spark/conf
+      - ./conf/hive:/etc/hadoop/conf
+      #- ../resource_manager/conf/yarn-site.xml:/home/pyspark/spark/conf/yarn-site.xml
+    networks:
+      - backend
+
+
+networks:
+  backend:
+    external: true

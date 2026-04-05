@@ -1,0 +1,172 @@
+# Docker Configureiton
+#https://docs.confluent.io/platform/current/installation/docker/config-reference.html
+# https://qiita.com/fkshom/items/cecb7e9b9aa342591813
+# https://docs.redhat.com/ja/documentation/red_hat_amq/2021.q2/html/using_amq_streams_on_rhel/oauth_2_0_authentication_configuration_in_the_kafka_cluster
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.9.0
+    hostname: zookeeper1.local.data.platform
+    container_name: zookeeper1.local.data.platform
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/opt/kafka/jaas.conf"
+    volumes:
+      - ./conf_z/jaas.conf:/opt/kafka/jaas.conf
+      - ./conf_z/zookeepr.properties:/etc/kafka/zookeeper.properties
+    networks:
+      - backend
+
+  kafka1:
+    ports:
+      - "49092:9092"
+    build: .
+    env_file:
+      - ./env/kafka.env
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: >
+        CLIENT_SASL_SSL://kafka1.local.data.platform:9092,
+        CLIENT_SASL_PLAINTEXT://kafka1.local.data.platform:9093,
+        CLIENT_OAUTH_SSL://kafka1.local.data.platform:9094
+      KAFKA_LOG4J_LOGGERS: >
+        org.apache.kafka.common.security.oauthbearer=DEBUG,
+        org.apache.kafka.common.security.oauthbearer.internals=TRACE
+      KAFKA_SSL_KEYSTORE_FILENAME: "ssl/kafka1.keystore.jks"
+    container_name: kafka1.local.data.platform
+    hostname: kafka1.local.data.platform
+    volumes:
+      - ./conf/jaas.conf:/opt/kafka/jaas.conf
+      - ./conf/log4j.properties:/etc/kafka/log4j.properties
+      - ../ca_certs/keystore1:/etc/kafka/secrets/ssl
+    depends_on:
+      - zookeeper
+    networks:
+      - backend
+
+  kafka2:
+    ports:
+      - "49093:9092"
+    build: .
+    env_file:
+      - ./env/kafka.env
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: >
+        CLIENT_SASL_SSL://kafka2.local.data.platform:9092,
+        CLIENT_SASL_PLAINTEXT://kafka2.local.data.platform:9093,
+        CLIENT_OAUTH_SSL://kafka2.local.data.platform:9094
+      KAFKA_SSL_KEYSTORE_FILENAME: "ssl/kafka2.keystore.jks"
+    container_name: kafka2.local.data.platform
+    hostname: kafka2.local.data.platform
+    volumes:
+      - ./conf/jaas.conf:/opt/kafka/jaas.conf
+      - ./conf/log4j.properties:/etc/kafka/log4j.properties
+      - ../ca_certs/keystore2:/etc/kafka/secrets/ssl
+    depends_on:
+      - zookeeper
+    networks:
+      - backend
+  
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.9.0
+    ports:
+      - "8081:8081"
+    environment:
+
+      # env key mapping
+      # https://github.com/coughman/cp-docker-images/blob/master/debian/schema-registry/include/etc/confluent/docker/schema-registry.properties.template
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: SASL_PLAINTEXT://kafka2.local.data.platform:9093,SASL_PLAINTEXT://kafka1.local.data.platform:9093
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_MECHANISM: PLAIN
+      SCHEMA_REGISTRY_KAFKASTORE_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin";
+
+      # SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.truststore.jks
+      # SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: 123456
+      # SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.keystore.jks
+      # SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: 123456
+      # SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: 123456
+      # SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.keystore.jks
+      # SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: 123456
+      # SCHEMA_REGISTRY_SSL_KEY_PASSWORD: 123456
+      # SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.truststore.jks
+      # SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: 123456
+      # SCHEMA_REGISTRY_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
+      # SCHEMA_REGISTRY_SSL_CLIENT_AUTH: required
+    container_name: schema-registry.local.data.platform
+    hostname: schema-registry.local.data.platform
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s  # 初期起動時間を考慮
+    # volumes:
+    #   - ./secrets:/etc/kafka/secrets
+    depends_on:
+      - kafka1
+      - kafka2
+    networks:
+      - backend
+
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:7.9.0
+    ports:
+      - "8082:8082"
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+      KAFKA_REST_BOOTSTRAP_SERVERS: CLIENT_SASL_PLAINTEXT://kafka2.local.data.platform:9093,CLIENT_SASL_PLAINTEXT://kafka1.local.data.platform:9093
+      KAFKA_REST_CLIENT_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_REST_CLIENT_SASL_MECHANISM: PLAIN
+      KAFKA_REST_CLIENT_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin";
+
+      ## keystore for SSL
+      # KAFKA_REST_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.truststore.jks
+      # KAFKA_REST_SSL_TRUSTSTORE_PASSWORD: 123456
+      # KAFKA_REST_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/ssl/kafka.keystore.jks
+      # KAFKA_REST_SSL_KEYSTORE_PASSWORD: 123456
+      # KAFKA_REST_SSL_KEY_PASSWORD: 123456
+
+      # KAFKA_REST_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+      # KAFKA_REST_SSL_CLIENT_AUTH: true
+    # volumes:
+    #   - ./secrets:/etc/kafka/secrets
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - kafka1
+      - kafka2
+    networks:
+      - backend
+
+  kafka_initializer:
+    build: init/
+    container_name: kafka-initializer.local.data.platform
+    hostname: kafka-initializer.local.data.platform
+    volumes:
+      - ./init/avsc:/opt/kafka/init:ro
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+      rest-proxy:
+        condition: service_healthy
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+
+# KAFKA_REST_HOST_NAME: rest-proxy
+# KAFKA_REST_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+# KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+# KAFKA_REST_BOOTSTRAP_SERVERS: SASL_PLAINTEXT://kafka_broker1:9092,SASL_PLAINTEXT://kafka_broker2:9092
+# KAFKA_REST_CLIENT_SASL_MECHANISM: PLAIN
+# KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+# KAFKA_REST_CLIENT_SASL_JAAS_CONFIG: org.apache.kafka.common.security.plain.PlainLoginModule required username="kafka" password="password";

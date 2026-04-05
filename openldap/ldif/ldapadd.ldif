@@ -1,0 +1,71 @@
+version: 1
+
+# まず組織単位を作成
+dn: ou=groups,dc=local,dc=data,dc=platform
+objectclass: organizationalUnit
+ou: groups
+
+dn: ou=people,dc=local,dc=data,dc=platform
+objectclass: organizationalUnit
+ou: people
+
+# ユーザーのプライマリグループを先に作成
+dn: cn=admingroup,ou=groups,dc=local,dc=data,dc=platform
+cn: admingroup
+gidnumber: 210000
+objectclass: posixGroup
+
+dn: cn=analystgroup,ou=groups,dc=local,dc=data,dc=platform
+cn: analystgroup
+gidnumber: 220000
+objectclass: posixGroup
+
+# 次にユーザーを作成（既存のgidNumberを参照）
+dn: uid=pyspark@local.data.platform,ou=people,dc=local,dc=data,dc=platform
+cn: pyspark@local.data.platform
+gidnumber: 210000
+homedirectory: /home/pyspark
+loginshell: /bin/bash
+objectclass: posixAccount
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+sn: pyspark@local.data.platform
+mail: pyspark@local.data.platform
+uid: pyspark@local.data.platform
+uidnumber: 10002
+userpassword: {SSHA}HtiLd3x3IMouphhW0E6b7773BntUL0ov
+memberOf: cn=admin,ou=groups,dc=local,dc=data,dc=platform
+
+dn: uid=user1@local.data.platform,ou=people,dc=local,dc=data,dc=platform
+cn: user1@local.data.platform
+gidnumber: 220000
+homedirectory: /home/user1
+loginshell: /bin/bash
+objectclass: posixAccount
+objectclass: inetOrgPerson
+objectclass: organizationalPerson
+objectclass: person
+sn: user1@local.data.platform
+mail: user1@local.data.platform
+uid: user1@local.data.platform
+uidnumber: 10003
+userpassword: {SSHA}55u3ULN3K7xo7dIS4JyXOOpElMDSFZKX
+memberOf: cn=analyst,ou=groups,dc=local,dc=data,dc=platform
+
+# 最後にTrino用グループを作成（ユーザーが存在してから）
+# ── 管理者グループ (admin) ───────────────────────
+dn: cn=admin,ou=groups,dc=local,dc=data,dc=platform
+cn: admin
+gidnumber: 211000
+objectclass: posixGroup
+objectclass: groupOfUniqueNames
+uniqueMember: uid=pyspark@local.data.platform,ou=people,dc=local,dc=data,dc=platform
+
+# ── アナリストグループ (analyst) ─────────────────
+dn: cn=analyst,ou=groups,dc=local,dc=data,dc=platform
+cn: analyst
+gidnumber: 221000
+objectclass: posixGroup
+objectclass: groupOfUniqueNames
+uniqueMember: uid=user1@local.data.platform,ou=people,dc=local,dc=data,dc=platform

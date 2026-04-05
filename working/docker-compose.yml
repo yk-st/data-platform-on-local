@@ -1,0 +1,34 @@
+#docker exec -it working_container /bin/bash
+
+services:
+  ubuntu:
+    build: .
+    container_name: work
+    hostname: work.local.data.platform
+    tty: true
+    # secrets:
+    #   - my_secret
+    volumes:
+      - ./generator:/home/pyspark/generator:ro
+      - ./programs:/home/pyspark/programs:ro
+      - ./security:/home/pyspark/security:ro
+      # stand alone modeで接続したい場合
+      - ../spark/conf/spark/spark-defaults.conf:/home/pyspark/spark/conf/spark-defaults.conf:ro
+      - ../spark/conf/hive/hive-site.xml:/home/pyspark/spark/conf/hive-site.xml:ro
+      # resource Manager経由で接続したい場合
+      # - ../spark_rm/conf/spark/spark-defaults.conf:/home/pyspark/spark/conf/spark-defaults.conf
+      # - ../spark_rm/conf/hive/hive-site.xml:/home/pyspark/spark/conf/hive-site.xml
+      # - ../resource_manager/conf/yarn-site.xml:/home/pyspark/spark/conf/yarn-site.xml
+      - ../ca_certs/server_certs/server.crt:/home/pyspark/server.crt:ro
+      - ../ca_certs/truststore/kafka.truststore.jks:/home/pyspark/kafka.truststore.jks:ro
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+
+# 本来のシークレットの扱い(利便性のため他のdocker-composeは直書きする)
+# secrets:
+#     my_secret:
+#         file: ./.secret

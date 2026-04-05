@@ -1,0 +1,12 @@
+services:
+  artifact_build:
+    build: .
+    tty: true
+    networks:
+      - backend
+    volumes:
+      - ../spark/conf/spark/spark-defaults.conf:/home/pyspark/spark/conf/spark-defaults.conf:ro
+
+networks:
+  backend:
+    external: true

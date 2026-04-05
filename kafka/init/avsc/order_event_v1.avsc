@@ -1,0 +1,43 @@
+{
+  "type": "record",
+  "name": "OrderEvent",
+  "namespace": "local_data_platform",
+  "doc": "受注ストリーム (orders_microbatch)",
+  "fields": [
+    /* ─────────── IDs ─────────── */
+    {
+      "name": "id",
+      "type": "string",
+      "doc" : "UUID v4",
+      "x-regex": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+
+    /* ─────────── User / Product ─────────── */
+    { "name": "user_id",    "type": "int", "doc": "ユーザーID" },
+    { "name": "product_id", "type": "int", "doc": "製品ID" },
+
+    /* ─────────── 金額 (decimal) ─────────── */
+    { "name": "subtotal_usd", "type": "double" },
+    { "name": "tax_usd",      "type": "double" },
+    { "name": "total_usd",       "type": "double" },
+
+
+    /* ─────────── 個数 & フラグ ─────────── */
+    { "name": "quantity", "type": "int", "doc": "数量（個）" },
+
+    {
+      "name": "status_flag",
+      "type": {                /* Avro enum = 値集合を強制できる */
+        "type": "enum",
+        "name": "OrderFlag",
+        "symbols": ["FLAG_0", "FLAG_1"]
+      },
+      "doc": "NORMAL=通常, CANCEL=取消"
+    },
+
+    /* ─────────── 生成時刻 ─────────── */
+    { "name": "created_at",
+      "type": { "type":"long","logicalType":"timestamp-millis" },
+      "doc": "UTCミリ秒" }
+  ]
+}

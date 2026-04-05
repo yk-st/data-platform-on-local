@@ -1,0 +1,2 @@
+admin:pyspark@local.data.platform
+analyst:user1@local.data.platform

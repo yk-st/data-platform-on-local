@@ -1,0 +1,13 @@
+pyspark==3.5.5
+# https://pypi.org/project/apache-airflow-providers-apache-spark/5.3.0/
+apache-airflow-providers-apache-spark==5.3.0
+apache-airflow-providers-jdbc==4.5.3
+apache-airflow-providers-slack==8.9.2
+apache-airflow-providers-postgres==5.14.0
+pandas==2.2.3
+pyarrow==18.0.0
+boto3==1.38.19
+botocore==1.38.19
+requests
+cuallee==0.15.2
+apache-airflow-providers-openlineage==2.4.0
