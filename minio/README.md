@@ -136,7 +136,7 @@ https://hub.docker.com/repository/docker/yukisaito/minio/general
 
 ```
 Mirror image:
-- yuki-saito/minio:RELEASE.2025-07-18T21-56-31Z
+- yukisaito/minio:RELEASE.2025-07-18T21-56-31Z
 
 Upstream image:
 - minio/minio:RELEASE.2025-07-18T21-56-31Z
