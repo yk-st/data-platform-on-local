@@ -1,4 +1,5 @@
-FROM minio/mc:RELEASE.2025-07-16T15-35-03Z
+#FROM minio/mc:RELEASE.2025-07-16T15-35-03Z
+FROM yukisaito/minio:RELEASE.2025-07-18T21-56-31Z
 
 # 環境変数を指定する（必要であれば変更）
 ENV MINIO_ROOT_USER=your-root-user
@@ -15,3 +16,4 @@ COPY fixed_dataset/ /root/fixed_dataset/
 
 # エントリーポイントを設定
 ENTRYPOINT ["docker-entrypoint.sh"]
+
